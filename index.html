@@ -227,6 +227,7 @@
 const GITHUB_OWNER = 'dldbdkslsdldb-maker';
 const GITHUB_REPO = 'rentcar';
 const API_BASE = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/issues`;
+const API_TOKEN = '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';
 
 // 탭 전환
 function switchTab(tab) {
@@ -262,7 +263,10 @@ async function submitApplication() {
   try {
     const res = await fetch(API_BASE, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Authorization': `token ${API_TOKEN}`,
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify({ title, body, labels: ['신청중'] })
     });
     if (!res.ok) throw new Error('API 오류');
