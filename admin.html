@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>차량 관리자 페이지 - 그랜저 GN7</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Malgun Gothic', sans-serif; background: #f0f2f5; min-height: 100vh; }
+
+  /* 로그인 화면 */
+  #loginScreen {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; background: linear-gradient(135deg, #1a3a5c, #2e6da4);
+  }
+  .login-box {
+    background: white; border-radius: 16px; padding: 40px;
+    width: 380px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    text-align: center;
+  }
+  .login-box .logo { font-size: 48px; margin-bottom: 12px; }
+  .login-box h2 { font-size: 20px; color: #1a3a5c; margin-bottom: 4px; }
+  .login-box p { font-size: 13px; color: #888; margin-bottom: 28px; }
+  .login-box input {
+    width: 100%; padding: 12px 16px; border: 1.5px solid #dde3ec;
+    border-radius: 8px; font-size: 14px; margin-bottom: 12px;
+    font-family: inherit;
+  }
+  .login-box input:focus { outline: none; border-color: #2e6da4; }
+  .login-box button {
+    width: 100%; padding: 13px; background: #1a3a5c; color: white;
+    border: none; border-radius: 8px; font-size: 15px; font-weight: 700;
+    cursor: pointer; font-family: inherit;
+  }
+  .login-box button:hover { background: #2e6da4; }
+  .login-error { color: #dc3545; font-size: 13px; margin-top: 8px; display: none; }
+
+  /* 메인 화면 */
+  #mainScreen { display: none; }
+
+  header {
+    background: linear-gradient(135deg, #1a3a5c, #2e6da4);
+    color: white; padding: 16px 28px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  header .left { display: flex; align-items: center; gap: 12px; }
+  header h1 { font-size: 19px; font-weight: 700; }
+  header p { font-size: 12px; opacity: 0.8; margin-top: 2px; }
+  .logout-btn {
+    background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.4);
+    padding: 7px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-family: inherit;
+  }
+  .logout-btn:hover { background: rgba(255,255,255,0.3); }
+
+  .container { max-width: 1100px; margin: 24px auto; padding: 0 16px 60px; }
+
+  /* 통계 카드 */
+  .stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px; }
+  .stat-card {
+    background: white; border-radius: 10px; padding: 16px;
+    text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    border-top: 3px solid #2e6da4;
+  }
+  .stat-card .num { font-size: 26px; font-weight: 800; color: #1a3a5c; }
+  .stat-card .lbl { font-size: 12px; color: #888; margin-top: 4px; }
+  .stat-신청중 { border-top-color: #ffc107; }
+  .stat-승인됨 { border-top-color: #198754; }
+  .stat-반려 { border-top-color: #dc3545; }
+  .stat-사용후 { border-top-color: #0d6efd; }
+  .stat-확정 { border-top-color: #6c757d; }
+
+  /* 필터/툴바 */
+  .toolbar {
+    background: white; border-radius: 10px; padding: 16px 20px;
+    display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07); margin-bottom: 16px;
+  }
+  .toolbar select, .toolbar input {
+    padding: 8px 12px; border: 1.5px solid #dde3ec;
+    border-radius: 7px; font-size: 13px; font-family: inherit;
+  }
+  .toolbar select:focus, .toolbar input:focus { outline: none; border-color: #2e6da4; }
+
+  .btn {
+    padding: 9px 18px; border: none; border-radius: 7px;
+    font-size: 13px; font-weight: 700; cursor: pointer;
+    transition: all 0.2s; font-family: inherit; white-space: nowrap;
+  }
+  .btn-primary { background: #2e6da4; color: white; }
+  .btn-primary:hover { background: #1a3a5c; }
+  .btn-success { background: #198754; color: white; }
+  .btn-success:hover { background: #146c43; }
+  .btn-danger { background: #dc3545; color: white; }
+  .btn-danger:hover { background: #bb2d3b; }
+  .btn-warning { background: #ffc107; color: #333; }
+  .btn-warning:hover { background: #e0a800; }
+  .btn-secondary { background: #6c757d; color: white; }
+  .btn-secondary:hover { background: #5a6268; }
+  .btn-excel { background: #217346; color: white; }
+  .btn-excel:hover { background: #185c37; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+  /* 테이블 */
+  .table-wrap {
+    background: white; border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07); overflow: hidden;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    background: #1a3a5c; color: white; padding: 12px 14px;
+    font-size: 12px; font-weight: 700; text-align: left;
+    white-space: nowrap;
+  }
+  tbody tr { border-bottom: 1px solid #f0f2f5; transition: background 0.15s; }
+  tbody tr:hover { background: #f8f9ff; }
+  tbody td { padding: 11px 14px; font-size: 13px; color: #333; vertical-align: middle; }
+
+  .status-badge {
+    display: inline-block; padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 700; white-space: nowrap;
+  }
+  .status-신청중 { background: #fff3cd; color: #856404; }
+  .status-승인됨 { background: #d1e7dd; color: #0f5132; }
+  .status-반려 { background: #f8d7da; color: #842029; }
+  .status-사용후입력완료 { background: #cfe2ff; color: #084298; }
+  .status-확정 { background: #d3d3d3; color: #333; }
+
+  .action-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  /* 모달 */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5); z-index: 1000;
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: white; border-radius: 14px; width: 680px; max-width: 95vw;
+    max-height: 90vh; overflow-y: auto; padding: 32px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .modal-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 24px;
+  }
+  .modal-header h3 { font-size: 18px; color: #1a3a5c; }
+  .close-btn {
+    background: none; border: none; font-size: 22px; cursor: pointer; color: #888;
+  }
+  .close-btn:hover { color: #333; }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.full { grid-column: 1 / -1; }
+  label { font-size: 13px; font-weight: 600; color: #444; }
+  input[type=text], input[type=date], input[type=number], select, textarea {
+    padding: 10px 12px; border: 1.5px solid #dde3ec;
+    border-radius: 7px; font-size: 13px; font-family: inherit;
+    background: #fafbfd;
+  }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: #2e6da4; background: white; }
+  textarea { resize: vertical; min-height: 70px; }
+  .km-auto { background: #e8f4e8 !important; font-weight: 700; color: #198754; }
+
+  .section-title {
+    font-size: 12px; font-weight: 700; color: #2e6da4;
+    text-transform: uppercase; margin: 20px 0 12px;
+    padding-bottom: 6px; border-bottom: 2px solid #e8f0f8;
+  }
+
+  .photo-preview { max-width: 100%; max-height: 200px; border-radius: 8px; border: 1px solid #dde3ec; margin-top: 8px; }
+  .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; border-top: 1px solid #f0f2f5; padding-top: 20px; }
+
+  .alert {
+    padding: 10px 14px; border-radius: 7px; font-size: 13px; margin-bottom: 12px;
+  }
+  .alert-info { background: #e8f0f8; color: #1a3a5c; border-left: 4px solid #2e6da4; }
+  .alert-warning { background: #fff3cd; color: #856404; border-left: 4px solid #ffc107; }
+
+  .loading { text-align: center; padding: 40px; color: #888; font-size: 15px; }
+  .empty { text-align: center; padding: 40px; color: #aaa; }
+
+  @media (max-width: 768px) {
+    .stats-row { grid-template-columns: repeat(3,1fr); }
+    .form-grid { grid-template-columns: 1fr; }
+    table { font-size: 12px; }
+    thead th, tbody td { padding: 8px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 로그인 화면 -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="logo">🔐</div>
+    <h2>관리자 로그인</h2>
+    <p>차량 관리 시스템 | (주)신신사</p>
+    <input type="password" id="pwInput" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter')login()">
+    <button onclick="login()">로그인</button>
+    <div class="login-error" id="loginError">비밀번호가 올바르지 않습니다.</div>
+  </div>
+</div>
+
+<!-- 메인 화면 -->
+<div id="mainScreen">
+  <header>
+    <div class="left">
+      <div>
+        <h1>🚗 차량 관리자 페이지</h1>
+        <p>그랜저 GN7 | (주)신신사 총무팀</p>
+      </div>
+    </div>
+    <button class="logout-btn" onclick="logout()">로그아웃</button>
+  </header>
+
+  <div class="container">
+    <!-- 통계 -->
+    <div class="stats-row">
+      <div class="stat-card stat-신청중"><div class="num" id="cnt-신청중">-</div><div class="lbl">신청중</div></div>
+      <div class="stat-card stat-승인됨"><div class="num" id="cnt-승인됨">-</div><div class="lbl">승인됨</div></div>
+      <div class="stat-card stat-사용후"><div class="num" id="cnt-사용후입력완료">-</div><div class="lbl">사용후입력완료</div></div>
+      <div class="stat-card stat-확정"><div class="num" id="cnt-확정">-</div><div class="lbl">확정</div></div>
+      <div class="stat-card stat-반려"><div class="num" id="cnt-반려">-</div><div class="lbl">반려</div></div>
+    </div>
+
+    <!-- 툴바 -->
+    <div class="toolbar">
+      <select id="filterStatus" onchange="renderTable()">
+        <option value="">전체 상태</option>
+        <option value="신청중">신청중</option>
+        <option value="승인됨">승인됨</option>
+        <option value="사용후입력완료">사용후입력완료</option>
+        <option value="확정">확정</option>
+        <option value="반려">반려</option>
+      </select>
+      <input type="text" id="filterName" placeholder="신청자 검색" oninput="renderTable()">
+      <input type="month" id="filterMonth" oninput="renderTable()">
+      <button class="btn btn-primary" onclick="loadData()">🔄 새로고침</button>
+      <button class="btn btn-excel" onclick="exportExcel()">📊 엑셀 내보내기</button>
+    </div>
+
+    <!-- 테이블 -->
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>사용일자</th>
+            <th>사용시간</th>
+            <th>신청자</th>
+            <th>목적지</th>
+            <th>사용목적</th>
+            <th>사용km</th>
+            <th>상태</th>
+            <th>관리</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr><td colspan="9" class="loading">데이터 로딩 중...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- 상세/수정 모달 -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">신청 상세</h3>
+      <button class="close-btn" onclick="closeModal()">✕</button>
+    </div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+const GITHUB_OWNER = 'dldbdkslsdldb-maker';
+const GITHUB_REPO = 'rentcar';
+const API_BASE = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/issues`;
+
+// 관리자 비밀번호 및 PAT (내부 저장)
+const ADMIN_PASSWORD = '19810316';
+const ADMIN_TOKEN = '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';
+
+let TOKEN = '';
+let allIssues = [];
+let currentIssueNumber = null;
+
+// 로그인 (비밀번호 확인 → PAT 자동 적용)
+function login() {
+  const pw = document.getElementById('pwInput').value.trim();
+  if (!pw) return;
+  if (pw !== ADMIN_PASSWORD) {
+    document.getElementById('loginError').style.display = 'block';
+    return;
+  }
+  TOKEN = ADMIN_TOKEN;
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('mainScreen').style.display = 'block';
+  loadData();
+}
+
+function logout() {
+  TOKEN = ''; allIssues = [];
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('mainScreen').style.display = 'none';
+  document.getElementById('pwInput').value = '';
+  document.getElementById('loginError').style.display = 'none';
+}
+
+// 데이터 로드
+async function loadData() {
+  document.getElementById('tableBody').innerHTML = '<tr><td colspan="9" class="loading">데이터 로딩 중...</td></tr>';
+  try {
+    const res = await fetch(`${API_BASE}?state=all&per_page=100`, {
+      headers: { 'Authorization': `token ${TOKEN}`, 'Accept': 'application/vnd.github+json' }
+    });
+    allIssues = await res.json();
+    updateStats();
+    renderTable();
+  } catch(e) {
+    document.getElementById('tableBody').innerHTML = '<tr><td colspan="9" class="empty">데이터 로드 실패</td></tr>';
+  }
+}
+
+// 통계 업데이트
+function updateStats() {
+  const counts = { '신청중':0, '승인됨':0, '사용후입력완료':0, '확정':0, '반려':0 };
+  allIssues.forEach(i => {
+    const d = parseIssueBody(i.body);
+    const s = d['상태'] || '신청중';
+    if (counts[s] !== undefined) counts[s]++;
+  });
+  Object.keys(counts).forEach(k => {
+    const el = document.getElementById(`cnt-${k}`);
+    if (el) el.textContent = counts[k];
+  });
+}
+
+// 테이블 렌더링
+function renderTable() {
+  const filterStatus = document.getElementById('filterStatus').value;
+  const filterName = document.getElementById('filterName').value.trim();
+  const filterMonth = document.getElementById('filterMonth').value;
+
+  let filtered = allIssues.filter(i => {
+    const d = parseIssueBody(i.body);
+    const status = d['상태'] || '신청중';
+    if (filterStatus && status !== filterStatus) return false;
+    if (filterName && !d['신청자'].includes(filterName)) return false;
+    if (filterMonth && !d['사용일자'].startsWith(filterMonth)) return false;
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    document.getElementById('tableBody').innerHTML = '<tr><td colspan="9" class="empty">조회된 내역이 없습니다</td></tr>';
+    return;
+  }
+
+  document.getElementById('tableBody').innerHTML = filtered.map(issue => {
+    const d = parseIssueBody(issue.body);
+    const status = d['상태'] || '신청중';
+    const sc = `status-${status}`;
+
+    let btns = `<div class="action-btns">
+      <button class="btn btn-primary btn-sm" onclick="openModal(${issue.number})">상세</button>`;
+
+    if (status === '신청중') {
+      btns += `<button class="btn btn-success btn-sm" onclick="quickAction(${issue.number},'승인')">승인</button>
+               <button class="btn btn-danger btn-sm" onclick="quickAction(${issue.number},'반려')">반려</button>`;
+    }
+    if (status === '사용후입력완료') {
+      btns += `<button class="btn btn-secondary btn-sm" onclick="quickAction(${issue.number},'확정')">확정</button>`;
+    }
+    btns += `</div>`;
+
+    return `<tr>
+      <td><strong>#${issue.number}</strong></td>
+      <td>${d['사용일자']}</td>
+      <td>${d['사용시간']}</td>
+      <td>${d['신청자']}</td>
+      <td>${d['목적지']}</td>
+      <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${d['사용목적']}">${d['사용목적']}</td>
+      <td>${d['사용km'] ? d['사용km']+'km' : '-'}</td>
+      <td><span class="status-badge ${sc}">${status}</span></td>
+      <td>${btns}</td>
+    </tr>`;
+  }).join('');
+}
+
+// 빠른 액션 (승인/반려/확정)
+async function quickAction(issueNumber, action) {
+  const issue = allIssues.find(i => i.number === issueNumber);
+  if (!issue) return;
+  const d = parseIssueBody(issue.body);
+
+  const confirmMsg = { '승인': '이 신청을 승인하시겠습니까?', '반려': '이 신청을 반려하시겠습니까?', '확정': '사용 내역을 확정하시겠습니까? (이후 수정 불가)' };
+  if (!confirm(confirmMsg[action])) return;
+
+  const newStatus = action === '승인' ? '승인됨' : action === '반려' ? '반려' : '확정';
+  await updateIssue(issueNumber, { ...d, status: newStatus });
+}
+
+// 모달 열기
+async function openModal(issueNumber) {
+  currentIssueNumber = issueNumber;
+  const issue = allIssues.find(i => i.number === issueNumber);
+  const d = parseIssueBody(issue.body);
+  const status = d['상태'] || '신청중';
+  const isLocked = status === '확정';
+
+  document.getElementById('modalTitle').textContent = `신청 #${issueNumber} 상세 / 수정`;
+  document.getElementById('modalOverlay').classList.add('open');
+
+  const disabledAttr = isLocked ? 'disabled' : '';
+  const photoHtml = d['계기판사진'] ? `<img src="${d['계기판사진']}" class="photo-preview">` : '';
+
+  document.getElementById('modalBody').innerHTML = `
+    ${isLocked ? '<div class="alert alert-warning">확정된 내역은 수정할 수 없습니다.</div>' : ''}
+
+    <div class="section-title">신청 정보</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>사용일자</label>
+        <input type="date" id="m-useDate" value="${d['사용일자']}" ${disabledAttr}>
+      </div>
+      <div class="form-group">
+        <label>사용시간</label>
+        <input type="text" id="m-useTime" value="${d['사용시간']}" ${disabledAttr}>
+      </div>
+      <div class="form-group">
+        <label>신청자</label>
+        <input type="text" id="m-applicant" value="${d['신청자']}" ${disabledAttr}>
+      </div>
+      <div class="form-group">
+        <label>목적지</label>
+        <input type="text" id="m-destination" value="${d['목적지']}" ${disabledAttr}>
+      </div>
+      <div class="form-group full">
+        <label>사용목적</label>
+        <input type="text" id="m-purpose" value="${d['사용목적']}" ${disabledAttr}>
+      </div>
+      <div class="form-group full">
+        <label>상태</label>
+        <select id="m-status" ${disabledAttr}>
+          <option value="신청중" ${d['상태']==='신청중'?'selected':''}>신청중</option>
+          <option value="승인됨" ${d['상태']==='승인됨'?'selected':''}>승인됨</option>
+          <option value="사용후입력완료" ${d['상태']==='사용후입력완료'?'selected':''}>사용후입력완료</option>
+          <option value="확정" ${d['상태']==='확정'?'selected':''}>확정</option>
+          <option value="반려" ${d['상태']==='반려'?'selected':''}>반려</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="section-title">사용 후 정보</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>사용 전 km</label>
+        <input type="number" id="m-beforeKm" value="${d['사용전km']}" ${disabledAttr} placeholder="출발 전 km">
+      </div>
+      <div class="form-group">
+        <label>사용 후 km</label>
+        <input type="number" id="m-afterKm" value="${d['사용후km']}" ${disabledAttr} placeholder="도착 후 km" oninput="modalCalcKm()">
+      </div>
+      <div class="form-group">
+        <label>사용 km (자동계산)</label>
+        <input type="number" id="m-usedKm" value="${d['사용km']}" class="km-auto" readonly placeholder="자동계산">
+      </div>
+      <div class="form-group full">
+        <label>계기판 사진 업로드</label>
+        ${isLocked ? '' : `<input type="file" id="m-photo" accept="image/*">`}
+        ${photoHtml}
+      </div>
+      <div class="form-group full">
+        <label>비고</label>
+        <textarea id="m-memo" ${disabledAttr}>${d['비고']}</textarea>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">닫기</button>
+      ${!isLocked ? `<button class="btn btn-primary" onclick="saveModal()">저장</button>` : ''}
+      ${(d['상태']==='신청중') ? `<button class="btn btn-success" onclick="saveWithStatus('승인됨')">승인 후 저장</button><button class="btn btn-danger" onclick="saveWithStatus('반려')">반려 처리</button>` : ''}
+      ${(d['상태']==='사용후입력완료') ? `<button class="btn btn-secondary" onclick="saveWithStatus('확정')">확정 처리</button>` : ''}
+    </div>`;
+
+  // km 자동계산 초기값
+  modalCalcKm();
+}
+
+function modalCalcKm() {
+  const before = parseFloat(document.getElementById('m-beforeKm')?.value) || 0;
+  const after = parseFloat(document.getElementById('m-afterKm')?.value) || 0;
+  const el = document.getElementById('m-usedKm');
+  if (el && (before || after)) el.value = after - before >= 0 ? after - before : '';
+}
+
+async function saveModal() {
+  const d = {
+    useDate: document.getElementById('m-useDate').value,
+    useTime: document.getElementById('m-useTime').value,
+    applicant: document.getElementById('m-applicant').value,
+    destination: document.getElementById('m-destination').value,
+    purpose: document.getElementById('m-purpose').value,
+    status: document.getElementById('m-status').value,
+    beforeKm: document.getElementById('m-beforeKm').value,
+    afterKm: document.getElementById('m-afterKm').value,
+    usedKm: document.getElementById('m-usedKm').value,
+    memo: document.getElementById('m-memo').value,
+  };
+
+  // 사진 업로드 처리
+  const photoFile = document.getElementById('m-photo')?.files[0];
+  let photoUrl = '';
+  if (photoFile) {
+    try {
+      photoUrl = await uploadPhoto(currentIssueNumber, photoFile);
+    } catch(e) { alert('사진 업로드 실패. 나머지 정보는 저장합니다.'); }
+  }
+
+  // 기존 사진 URL 유지
+  const issue = allIssues.find(i => i.number === currentIssueNumber);
+  const existing = parseIssueBody(issue.body);
+  d.photoUrl = photoUrl || existing['계기판사진'];
+
+  await updateIssue(currentIssueNumber, d);
+}
+
+async function saveWithStatus(newStatus) {
+  document.getElementById('m-status').value = newStatus;
+  await saveModal();
+}
+
+// Issue 업데이트
+async function updateIssue(issueNumber, d) {
+  const body = buildIssueBody(d);
+  const title = `[차량신청] ${d.useDate || d['사용일자']} / ${d.applicant || d['신청자']} / ${d.purpose || d['사용목적']}`;
+  const status = d.status || d['상태'] || '신청중';
+
+  const stateMap = { '확정': 'closed', '반려': 'closed' };
+  const issueState = stateMap[status] || 'open';
+
+  try {
+    const res = await fetch(`${API_BASE}/${issueNumber}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `token ${TOKEN}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ title, body, labels: [status], state: issueState })
+    });
+    if (!res.ok) throw new Error();
+    closeModal();
+    await loadData();
+    alert('저장되었습니다.');
+  } catch(e) {
+    alert('저장 실패. 다시 시도해주세요.');
+  }
+}
+
+// 사진 업로드
+async function uploadPhoto(issueNumber, file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const base64 = e.target.result.split(',')[1];
+      const ext = file.name.split('.').pop();
+      const filename = `dashboard_${issueNumber}_${Date.now()}.${ext}`;
+      try {
+        const res = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/photos/${filename}`, {
+          method: 'PUT',
+          headers: { 'Authorization': `token ${TOKEN}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: `photo #${issueNumber}`, content: base64 })
+        });
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        resolve(data.content.download_url);
+      } catch(e) { reject(e); }
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// 모달 닫기
+function closeModal(e) {
+  if (e && e.target !== document.getElementById('modalOverlay')) return;
+  document.getElementById('modalOverlay').classList.remove('open');
+  currentIssueNumber = null;
+}
+
+// 엑셀 내보내기
+function exportExcel() {
+  const filterStatus = document.getElementById('filterStatus').value;
+  const filterName = document.getElementById('filterName').value.trim();
+  const filterMonth = document.getElementById('filterMonth').value;
+
+  let data = allIssues.filter(i => {
+    const d = parseIssueBody(i.body);
+    const status = d['상태'] || '신청중';
+    if (filterStatus && status !== filterStatus) return false;
+    if (filterName && !d['신청자'].includes(filterName)) return false;
+    if (filterMonth && !d['사용일자'].startsWith(filterMonth)) return false;
+    return true;
+  }).map(issue => {
+    const d = parseIssueBody(issue.body);
+    return {
+      '신청번호': `#${issue.number}`,
+      '사용일자': d['사용일자'],
+      '사용시간': d['사용시간'],
+      '신청자': d['신청자'],
+      '목적지': d['목적지'],
+      '사용목적': d['사용목적'],
+      '상태': d['상태'],
+      '사용전km': d['사용전km'],
+      '사용후km': d['사용후km'],
+      '사용km': d['사용km'],
+      '계기판사진': d['계기판사진'],
+      '비고': d['비고'],
+      '신청일': new Date(issue.created_at).toLocaleDateString('ko-KR')
+    };
+  });
+
+  if (data.length === 0) { alert('내보낼 데이터가 없습니다.'); return; }
+
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '차량사용내역');
+
+  // 컬럼 너비 자동조정
+  ws['!cols'] = [
+    {wch:10},{wch:12},{wch:16},{wch:14},{wch:16},{wch:20},
+    {wch:14},{wch:12},{wch:12},{wch:10},{wch:40},{wch:20},{wch:14}
+  ];
+
+  const month = filterMonth || new Date().toISOString().slice(0,7);
+  XLSX.writeFile(wb, `차량사용내역_${month}.xlsx`);
+}
+
+// Issue Body 생성
+function buildIssueBody(d) {
+  return `## 차량 사용 신청서
+
+| 항목 | 내용 |
+|------|------|
+| 사용일자 | ${d.useDate || d['사용일자'] || ''} |
+| 사용시간 | ${d.useTime || d['사용시간'] || ''} |
+| 신청자 | ${d.applicant || d['신청자'] || ''} |
+| 목적지 | ${d.destination || d['목적지'] || ''} |
+| 사용목적 | ${d.purpose || d['사용목적'] || ''} |
+| 상태 | ${d.status || d['상태'] || '신청중'} |
+| 사용전km | ${d.beforeKm || d['사용전km'] || ''} |
+| 사용후km | ${d.afterKm || d['사용후km'] || ''} |
+| 사용km | ${d.usedKm || d['사용km'] || ''} |
+| 계기판사진 | ${d.photoUrl || d['계기판사진'] || ''} |
+| 비고 | ${d.memo || d['비고'] || ''} |`;
+}
+
+// Issue Body 파싱
+function parseIssueBody(body) {
+  if (!body) return {};
+  const d = {};
+  const fields = ['사용일자','사용시간','신청자','목적지','사용목적','상태','사용전km','사용후km','사용km','계기판사진','비고'];
+  fields.forEach(f => {
+    const re = new RegExp(`\\| ${f} \\| (.+?) \\|`);
+    const m = body.match(re);
+    d[f] = m ? m[1].trim() : '';
+  });
+  return d;
+}
+</script>
+</body>
+</html>
