@@ -76,6 +76,38 @@
   .stat-반려  { background: linear-gradient(135deg, #ef4444, #dc2626); }
   .stat-사용후 { background: linear-gradient(135deg, #3b82f6, #2563eb); }
   .stat-확정  { background: linear-gradient(135deg, #64748b, #475569); }
+  /* ── 통계 카드 클릭 ── */
+  .stat-card{cursor:pointer;transition:transform .15s,box-shadow .15s;}
+  .stat-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,0.2);}
+  .stat-card.active-filter{outline:3px solid rgba(255,255,255,0.9);outline-offset:2px;}
+  /* ── 관리자 레이아웃 ── */
+  .admin-layout{display:flex;gap:16px;align-items:flex-start;}
+  .admin-main{flex:1;min-width:0;}
+  .admin-cal-wrap{width:240px;flex-shrink:0;}
+  /* ── 미니 캘린더 공통 ── */
+  .mcal{background:white;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.08);padding:14px;position:sticky;top:16px;}
+  .mcal-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+  .mcal-nav button{background:none;border:none;cursor:pointer;font-size:18px;color:#1a3a5c;padding:0 6px;line-height:1;border-radius:4px;}
+  .mcal-nav button:hover{background:#e8f0f8;}
+  .mcal-nav-title{font-size:13px;font-weight:700;color:#1a3a5c;}
+  .mcal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;}
+  .mcal-dow{font-size:10px;font-weight:700;color:#888;padding:3px 0;}
+  .mcal-cell{font-size:11px;padding:4px 2px;border-radius:4px;min-height:26px;line-height:1.3;}
+  .mcal-cell.other-month{color:#ccc;}
+  .mcal-cell.today{font-weight:700;border:1.5px solid #2e6da4;color:#1a3a5c;}
+  .mcal-cell.ev-사용중{background:#fee2e2;color:#7f1d1d;cursor:pointer;}
+  .mcal-cell.ev-확정{background:#d1fae5;color:#065f46;cursor:pointer;}
+  .mcal-cell.ev-신청중,.mcal-cell.ev-승인됨,.mcal-cell.ev-사용후입력완료{background:#fef3c7;color:#78350f;cursor:pointer;}
+  .mcal-legend{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;font-size:10.5px;}
+  .mcal-legend span{display:flex;align-items:center;gap:3px;}
+  .mcal-legend i{width:10px;height:10px;border-radius:2px;display:inline-block;flex-shrink:0;}
+  .mcal-event-list{margin-top:10px;border-top:1px solid #eee;padding-top:8px;max-height:200px;overflow-y:auto;}
+  .mcal-ev-item{font-size:11px;padding:5px 8px;border-radius:4px;margin-bottom:4px;line-height:1.4;cursor:pointer;}
+  .mcal-ev-item:hover{filter:brightness(.95);}
+  .mcal-ev-item.ev-사용중{background:#fee2e2;color:#7f1d1d;}
+  .mcal-ev-item.ev-확정,.mcal-ev-item.ev-사용후입력완료{background:#d1fae5;color:#065f46;}
+  .mcal-ev-item.ev-신청중,.mcal-ev-item.ev-승인됨{background:#fef3c7;color:#78350f;}
+  @media(max-width:900px){.admin-layout{flex-direction:column;}.admin-cal-wrap{width:100%;}}
 
   /* 필터/툴바 */
   .toolbar {
@@ -226,13 +258,16 @@
   <div class="container">
     <!-- 통계 -->
     <div class="stats-row">
-      <div class="stat-card stat-신청중"><div class="num" id="cnt-신청중">-</div><div class="lbl">신청중</div></div>
-      <div class="stat-card stat-승인됨"><div class="num" id="cnt-승인됨">-</div><div class="lbl">승인됨</div></div>
-      <div class="stat-card stat-사용후"><div class="num" id="cnt-사용후입력완료">-</div><div class="lbl">사용후입력완료</div></div>
-      <div class="stat-card stat-확정"><div class="num" id="cnt-확정">-</div><div class="lbl">확정</div></div>
-      <div class="stat-card stat-반려"><div class="num" id="cnt-반려">-</div><div class="lbl">반려</div></div>
+      <div class="stat-card stat-신청중" onclick="filterByStatus('신청중')"><div class="num" id="cnt-신청중">-</div><div class="lbl">신청중</div></div>
+      <div class="stat-card stat-승인됨" onclick="filterByStatus('승인됨')"><div class="num" id="cnt-승인됨">-</div><div class="lbl">승인됨</div></div>
+      <div class="stat-card stat-사용후" onclick="filterByStatus('사용후입력완료')"><div class="num" id="cnt-사용후입력완료">-</div><div class="lbl">사용후입력완료</div></div>
+      <div class="stat-card stat-확정" onclick="filterByStatus('확정')"><div class="num" id="cnt-확정">-</div><div class="lbl">확정</div></div>
+      <div class="stat-card stat-반려" onclick="filterByStatus('반려')"><div class="num" id="cnt-반려">-</div><div class="lbl">반려</div></div>
     </div>
 
+    <!-- 메인 레이아웃 -->
+    <div class="admin-layout">
+    <div class="admin-main">
     <!-- 툴바 -->
     <div class="toolbar">
       <select id="filterStatus" onchange="renderTable()">
@@ -270,6 +305,27 @@
         </tbody>
       </table>
     </div>
+    </div><!-- /admin-main -->
+    <div class="admin-cal-wrap">
+      <div class="mcal">
+        <div class="mcal-nav">
+          <button onclick="adminCalMove(-1)">&#8249;</button>
+          <span class="mcal-nav-title" id="adminCalTitle">-</span>
+          <button onclick="adminCalMove(1)">&#8250;</button>
+        </div>
+        <div style="font-size:11px;color:#888;margin-bottom:6px;">날짜 클릭 시 상세 일정 표시</div>
+        <div class="mcal-grid" id="adminCalGrid"></div>
+        <div class="mcal-legend">
+          <span><i style="background:#fee2e2"></i>사용중</span>
+          <span><i style="background:#d1fae5"></i>확정</span>
+          <span><i style="background:#fef3c7"></i>신청/승인</span>
+        </div>
+        <div class="mcal-event-list" id="adminCalEventList">
+          <div style="font-size:11px;color:#999;">로딩 중...</div>
+        </div>
+      </div>
+    </div>
+    </div><!-- /admin-layout -->
   </div>
 </div>
 
@@ -342,6 +398,7 @@ function updateStats() {
     const s = d['상태'] || '신청중';
     if (counts[s] !== undefined) counts[s]++;
   });
+  renderAdminCal();
   Object.keys(counts).forEach(k => {
     const el = document.getElementById(`cnt-${k}`);
     if (el) el.textContent = counts[k];
@@ -718,6 +775,112 @@ function buildIssueBody(d) {
 | 비고 | ${d.memo || d['비고'] || ''} |
 | 반려사유 | ${d.rejectReason || d['반려사유'] || ''} |
 | 비밀번호 | ${d.password || d['비밀번호'] || ''} |`;
+}
+
+// ── 통계 카드 클릭 필터 ──
+function filterByStatus(status) {
+  const sel = document.getElementById('filterStatus');
+  if (sel.value === status) {
+    sel.value = '';
+    document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active-filter'));
+  } else {
+    sel.value = status;
+    document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active-filter'));
+    const map = { '신청중':'stat-신청중','승인됨':'stat-승인됨','사용후입력완료':'stat-사용후','확정':'stat-확정','반려':'stat-반려' };
+    document.querySelector('.' + (map[status] || '')).classList.add('active-filter');
+  }
+  renderTable();
+  document.querySelector('.admin-layout').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── 관리자 미니 캘린더 ──
+let adminCalYear = new Date().getFullYear();
+let adminCalMonth = new Date().getMonth();
+
+function adminCalMove(d) {
+  adminCalMonth += d;
+  if (adminCalMonth > 11) { adminCalMonth = 0; adminCalYear++; }
+  if (adminCalMonth < 0)  { adminCalMonth = 11; adminCalYear--; }
+  renderAdminCal();
+}
+
+function parseAdminDate(body) {
+  if (!body) return {};
+  const get = f => { const m = body.match(new RegExp('\\|\\s*' + f + '\\s*\\|\\s*([^|\\n]+)')); return m ? m[1].trim() : ''; };
+  const raw = get('사용일자');
+  const parts = raw.split('~').map(s => s.trim());
+  return { start: parts[0] || '', end: parts[1] || parts[0] || '', time: get('사용시간'), status: get('상태') || '신청중', applicant: get('신청자'), dept: get('신청자').split('/')[1] || '', dest: get('목적지') };
+}
+
+function expandAdminDates(s, e) {
+  const res = []; if (!s) return res;
+  try {
+    const cur = new Date(s), end = new Date(e || s);
+    let n = 0;
+    while (cur <= end && n++ < 365) { res.push(cur.toISOString().split('T')[0]); cur.setDate(cur.getDate() + 1); }
+  } catch(err) {}
+  return res;
+}
+
+function renderAdminCal() {
+  const DOW = ['일','월','화','수','목','금','토'];
+  const todayStr = new Date().toISOString().split('T')[0];
+  document.getElementById('adminCalTitle').textContent = adminCalYear + '년 ' + (adminCalMonth + 1) + '월';
+
+  const evMap = {};
+  const PRI = { 사용중:4, 확정:3, 사용후입력완료:3, 승인됨:2, 신청중:1 };
+  allIssues.forEach(issue => {
+    const p = parseAdminDate(issue.body);
+    if (!p.start) return;
+    expandAdminDates(p.start, p.end).forEach(dt => {
+      const pri = PRI[p.status] || 1;
+      if (!evMap[dt] || pri > evMap[dt].pri) evMap[dt] = { status: p.status, pri };
+    });
+  });
+
+  const firstDay = new Date(adminCalYear, adminCalMonth, 1).getDay();
+  const lastDay  = new Date(adminCalYear, adminCalMonth + 1, 0).getDate();
+  let html = DOW.map(d => '<div class="mcal-dow">' + d + '</div>').join('');
+  for (let i = 0; i < firstDay; i++) html += '<div class="mcal-cell other-month"></div>';
+  for (let day = 1; day <= lastDay; day++) {
+    const ds = adminCalYear + '-' + String(adminCalMonth + 1).padStart(2,'0') + '-' + String(day).padStart(2,'0');
+    const info = evMap[ds];
+    let cls = 'mcal-cell' + (ds === todayStr ? ' today' : '') + (info ? ' ev-' + info.status : '');
+    // 툴팁: 해당 날짜 이슈 요약
+    const tips = allIssues.map(i => parseAdminDate(i.body)).filter(p => p.start && expandAdminDates(p.start, p.end).includes(ds));
+    const tip = tips.map(p => (p.applicant || '') + ' ' + (p.time || '')).join(' / ');
+    html += '<div class="' + cls + '" title="' + tip + '" onclick="showAdminCalDay(\'' + ds + '\')">' + day + '</div>';
+  }
+  document.getElementById('adminCalGrid').innerHTML = html;
+
+  // 이달 전체 목록 기본 표시
+  const monthPfx = adminCalYear + '-' + String(adminCalMonth + 1).padStart(2,'0');
+  const monthItems = allIssues.map(i => parseAdminDate(i.body)).filter(p => p.start && (p.start.startsWith(monthPfx) || (p.end && p.end >= monthPfx + '-01' && p.start <= monthPfx + '-31')));
+  renderAdminCalList(monthItems);
+}
+
+function showAdminCalDay(ds) {
+  const items = allIssues.map(i => parseAdminDate(i.body)).filter(p => p.start && expandAdminDates(p.start, p.end).includes(ds));
+  renderAdminCalList(items, ds);
+}
+
+function renderAdminCalList(items, ds) {
+  const title = ds ? ds + ' 일정' : (adminCalMonth + 1) + '월 전체 일정';
+  const LABEL = { 신청중:'신청중', 승인됨:'예약확정', 사용중:'사용중', 확정:'확정', 사용후입력완료:'사용후입력완료', 반려:'반려' };
+  let html = '<div style="font-size:11px;font-weight:700;color:#1a3a5c;margin-bottom:5px;">' + title + '</div>';
+  if (!items.length) {
+    html += '<div style="font-size:11px;color:#999;">일정이 없습니다.</div>';
+  } else {
+    items.forEach(p => {
+      const st = p.status || '신청중';
+      const evCls = ['확정','사용후입력완료'].includes(st) ? 'ev-확정' : 'ev-' + st;
+      html += '<div class="mcal-ev-item ' + evCls + '" title="' + (p.applicant||'') + ' | ' + (p.dest||'') + ' | ' + (p.time||'') + '">'
+            + '<div><strong>' + (p.applicant || '-') + '</strong> <span style="opacity:.7;font-size:10px">' + (LABEL[st] || st) + '</span></div>'
+            + '<div style="font-size:10px">' + p.start + (p.end && p.end !== p.start ? ' ~ ' + p.end : '') + (p.time ? ' · ' + p.time : '') + '</div>'
+            + '</div>';
+    });
+  }
+  document.getElementById('adminCalEventList').innerHTML = html;
 }
 
 // Issue Body 파싱
