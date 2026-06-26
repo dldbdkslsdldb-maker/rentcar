@@ -902,7 +902,7 @@ function renderAdminCalList(items, ds) {
 
   // 오늘 이전 항목 제거, 오늘에 가까운 순 정렬
   const future = items
-    .filter(p => p.start && (p.end || p.start) >= todayStr)
+    .filter(p => p.start && (p.status === '반려' || (p.end || p.start) >= todayStr))
     .sort((a, b) => (a.start || '') < (b.start || '') ? -1 : (a.start || '') > (b.start || '') ? 1 : 0);
 
   let html = '<div style="font-size:11px;font-weight:700;color:#1a3a5c;margin-bottom:5px;">' + title + '</div>';
@@ -911,7 +911,7 @@ function renderAdminCalList(items, ds) {
   } else {
     future.forEach(p => {
       const st = adminEffectiveStatus(p);
-      const evCls = st === '사용중' ? 'ev-사용중' : ['확정','사용후입력완료'].includes(st) ? 'ev-확정' : 'ev-신청중';
+      const evCls = st === '사용중' ? 'ev-사용중' : ['확정','사용후입력완료'].includes(st) ? 'ev-확정' : st === '반려' ? 'ev-반려' : 'ev-신청중';
 
       // 시간 파싱: "09시 00분 ~ 18시 00분" → 앞/뒤 분리
       const timeParts = (p.time || '').split('~').map(s => s.trim());

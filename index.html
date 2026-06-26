@@ -866,17 +866,17 @@ function showCalDay(ds) {
 
 function renderCalList(items, ds) {
   const title = ds ? ds + ' 일정' : (calMonth + 1) + '월 전체 일정';
-  const LABEL = { 신청중:'신청/승인', 승인됨:'신청/승인', 사용중:'사용중', 확정:'완료(확정)', 사용후입력완료:'완료(확정)' };
+  const LABEL = { 신청중:'신청/승인', 승인됨:'신청/승인', 사용중:'사용중', 확정:'완료(확정)', 사용후입력완료:'완료(확정)', 반려:'반려' };
   const today = new Date().toISOString().split('T')[0];
-  // 과거(종료일 < 오늘) 항목 제거
-  const visible = items.filter(p => (p.end || p.start) >= today).reverse();
+  // 과거(종료일 < 오늘) 항목 제거 (반려는 날짜 무관 표시)
+  const visible = items.filter(p => p.status === '반려' || (p.end || p.start) >= today).reverse();
   let html = '<div style="font-size:11px;font-weight:700;color:#1a3a5c;margin-bottom:5px;">' + title + '</div>';
   if (!visible.length) {
     html += '<div style="font-size:11px;color:#999;">예정된 일정이 없습니다.</div>';
   } else {
     visible.forEach(p => {
       const st = effectiveStatus(p);
-      const evCls = st === '사용중' ? 'ev-사용중' : ['확정','사용후입력완료'].includes(st) ? 'ev-확정' : 'ev-신청중';
+      const evCls = st === '사용중' ? 'ev-사용중' : ['확정','사용후입력완료'].includes(st) ? 'ev-확정' : st === '반려' ? 'ev-반려' : 'ev-신청중';
       const dateStr = p.start + (p.end && p.end !== p.start ? ' ~ ' + p.end : '');
       html += '<div class="mcal-ev-item ' + evCls + '">'
             + '<div style="font-weight:700">' + (LABEL[st] || st) + '</div>'
