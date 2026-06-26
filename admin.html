@@ -662,8 +662,7 @@ async function updateIssue(issueNumber, d) {
   const title = `[차량신청] ${d.useDate || d['사용일자']} / ${d.applicant || d['신청자']} / ${d.purpose || d['사용목적']}`;
   const status = d.status || d['상태'] || '신청중';
 
-  const stateMap = { '확정': 'closed', '반려': 'closed' };
-  const issueState = stateMap[status] || 'open';
+  const issueState = 'open';
 
   try {
     const res = await fetch(`${API_BASE}/${issueNumber}`, {
