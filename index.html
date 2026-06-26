@@ -411,6 +411,12 @@ async function submitApplication() {
   if (!startDate || !endDate || !applicantName || !applicantDept || !destination || !purposeSel) {
     alert('모든 필수 항목을 입력해주세요.'); return;
   }
+  if (endDate < startDate) {
+    alert('종료일자가 시작일자보다 빠를 수 없습니다.'); return;
+  }
+  if (endDate === startDate && (endHour < startHour || (endHour === startHour && endMin <= startMin))) {
+    alert('종료 시간이 시작 시간보다 빠르거나 같을 수 없습니다.'); return;
+  }
   if (checkConflict()) {
     alert('해당 일시에 이미 승인된 예약이 있습니다.\n다른 일시를 선택해주세요.'); return;
   }
