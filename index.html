@@ -765,9 +765,10 @@ function renderCalList(items, ds) {
     items.forEach(p => {
       const st = p.status || '신청중';
       const evCls = ['확정','사용후입력완료'].includes(st) ? 'ev-확정' : 'ev-' + st;
+      const dateStr = p.start + (p.end && p.end !== p.start ? ' ~ ' + p.end : '');
       html += '<div class="mcal-ev-item ' + evCls + '">'
-            + '<div><strong>' + (p.applicant || '-') + '</strong> <span style="opacity:.7;font-size:10px">' + (LABEL[st] || st) + '</span></div>'
-            + '<div style="font-size:10px">' + p.start + (p.end && p.end !== p.start ? ' ~ ' + p.end : '') + ' ' + (p.time || '') + '</div>'
+            + '<div style="font-weight:700">' + (LABEL[st] || st) + '</div>'
+            + '<div style="font-size:10px;margin-top:2px">' + dateStr + (p.time ? '&nbsp;&nbsp;' + p.time : '') + '</div>'
             + '</div>';
     });
   }
