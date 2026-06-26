@@ -110,6 +110,16 @@
   .alert-success { background: #d1e7dd; color: #0f5132; border-left: 4px solid #198754; }
   .alert-danger { background: #f8d7da; color: #842029; border-left: 4px solid #dc3545; }
 
+  /* ── 프로세스 박스 ── */
+  .process-box{background:#f0f6ff;border-left:4px solid #3b82f6;border-radius:0 6px 6px 0;padding:11px 15px;margin-bottom:10px;font-size:12px;color:#1e3a5f;}
+  .process-box strong{display:block;margin-bottom:7px;font-size:12.5px;font-weight:700;}
+  .process-flow{display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-bottom:4px;}
+  .process-flow:last-child{margin-bottom:0;}
+  .proc-item{font-weight:700;margin-right:6px;white-space:nowrap;}
+  .proc-ok{color:#059669;}
+  .proc-no{color:#dc2626;}
+  .proc-arrow{background:#e2eaf7;border-radius:4px;padding:2px 7px;white-space:nowrap;}
+  .proc-sep{color:#94a3b8;font-weight:700;}
   /* ── 차량 안내 박스 ── */
   .notice-box{background:#fffbeb;border-left:4px solid #f59e0b;border-radius:0 6px 6px 0;padding:13px 15px;margin-bottom:14px;font-size:12.5px;color:#78350f;}
   .notice-box strong{display:block;margin-bottom:6px;font-size:13px;font-weight:700;}
@@ -198,6 +208,22 @@
   <div id="tab-apply" class="tab-panel active">
     <div class="card">
       <div class="alert alert-info">그랜저 GN7 (179하4233) 업무용 차량 사용 신청서입니다. 승인 후 사용 가능합니다.</div>
+      <div class="process-box">
+        <strong>📌 신청 프로세스</strong>
+        <div class="process-flow">
+          <span class="proc-item proc-ok">✅ 승인</span>
+          <span class="proc-arrow">신청</span><span class="proc-sep">→</span>
+          <span class="proc-arrow">승인 (관리자)</span><span class="proc-sep">→</span>
+          <span class="proc-arrow">차 키 수령 및 사용</span><span class="proc-sep">→</span>
+          <span class="proc-arrow">km 입력</span><span class="proc-sep">→</span>
+          <span class="proc-arrow">확정</span>
+        </div>
+        <div class="process-flow">
+          <span class="proc-item proc-no">❌ 반려</span>
+          <span class="proc-arrow">신청</span><span class="proc-sep">→</span>
+          <span class="proc-arrow">반려 (관리자, 사유 기입)</span>
+        </div>
+      </div>
       <div class="notice-box">
         <strong>📋 해당 차량은 일반적인 공용 업무 차량과 구분하여, 아래와 같은 경우에 우선적으로 배정될 예정입니다.</strong>
         <ul>
