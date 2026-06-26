@@ -147,17 +147,19 @@
   .mcal-cell{font-size:11px;padding:4px 2px;border-radius:4px;min-height:26px;line-height:1.3;}
   .mcal-cell.other-month{color:#ccc;}
   .mcal-cell.today{font-weight:700;border:1.5px solid #2e6da4;color:#1a3a5c;}
-  .mcal-cell.ev-사용중{background:#fee2e2;color:#7f1d1d;cursor:pointer;}
-  .mcal-cell.ev-확정{background:#d1fae5;color:#065f46;cursor:pointer;}
-  .mcal-cell.ev-신청중,.mcal-cell.ev-승인됨,.mcal-cell.ev-사용후입력완료{background:#fef3c7;color:#78350f;cursor:pointer;}
+  .mcal-cell.ev-사용중{background:#dcfce7;color:#166534;cursor:pointer;}
+  .mcal-cell.ev-확정{background:#dbeafe;color:#1e40af;cursor:pointer;}
+  .mcal-cell.ev-신청중,.mcal-cell.ev-승인됨,.mcal-cell.ev-사용후입력완료{background:#fff3e0;color:#c2410c;cursor:pointer;}
+  .mcal-cell.ev-반려{background:#fce7f3;color:#9d174d;cursor:pointer;}
   .mcal-legend{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;font-size:10.5px;}
   .mcal-legend span{display:flex;align-items:center;gap:3px;}
   .mcal-legend i{width:10px;height:10px;border-radius:2px;display:inline-block;flex-shrink:0;}
   .mcal-event-list{margin-top:10px;border-top:1px solid #eee;padding-top:8px;}
   .mcal-ev-item{font-size:11px;padding:5px 8px;border-radius:4px;margin-bottom:4px;line-height:1.4;cursor:default;}
-  .mcal-ev-item.ev-사용중{background:#fee2e2;color:#7f1d1d;}
-  .mcal-ev-item.ev-확정{background:#d1fae5;color:#065f46;}
-  .mcal-ev-item.ev-신청중,.mcal-ev-item.ev-승인됨,.mcal-ev-item.ev-사용후입력완료{background:#fef3c7;color:#78350f;}
+  .mcal-ev-item.ev-사용중{background:#dcfce7;color:#166534;}
+  .mcal-ev-item.ev-확정{background:#dbeafe;color:#1e40af;}
+  .mcal-ev-item.ev-신청중,.mcal-ev-item.ev-승인됨,.mcal-ev-item.ev-사용후입력완료{background:#fff3e0;color:#c2410c;}
+  .mcal-ev-item.ev-반려{background:#fce7f3;color:#9d174d;}
   @media(max-width:900px){.page-layout{flex-direction:column;}.side-cal{width:100%;}}
 
   .list-item {
@@ -219,8 +221,8 @@
         <div class="ic-car">
           <p>· 승인 후 사용 가능한 업무 전용 차량입니다.</p>
           <p>· 차량 반납 장소 : <strong>창원1공장</strong></p>
-          <div style="margin-top:5px">
-            <p>· <strong>배정 대상 :</strong> 해당 차량은 일반적인 공용 업무 차량과 구분하여, 아래와 같은 경우에 우선적으로 배정될 예정입니다.</p>
+          <div style="margin-top:8px;padding-top:8px;border-top:1px solid #c7d9f0">
+            <p>🎯 <strong>배정 대상 :</strong> 해당 차량은 일반적인 공용 업무 차량과 구분하여, 아래와 같은 경우에 우선적으로 배정될 예정입니다.</p>
             <ul style="padding-left:16px;margin:3px 0 0 0;line-height:1.9">
               <li>외부 고객사 및 주요 인사 의전이 필요한 경우</li>
               <li>장거리 또는 장기 출장 등 업무상 차량 운행이 필요한 경우</li>
@@ -338,9 +340,9 @@
     <div style="font-size:11px;color:#888;margin-bottom:6px;">날짜 클릭 시 상세 일정 표시</div>
     <div class="mcal-grid" id="calGrid"></div>
     <div class="mcal-legend">
-      <span><i style="background:#fef3c7"></i>신청/승인</span>
-      <span><i style="background:#fee2e2"></i>사용중</span>
-      <span><i style="background:#d1fae5"></i>완료(확정)</span>
+      <span><i style="background:#fff3e0"></i>신청/승인</span>
+      <span><i style="background:#dcfce7"></i>사용중</span>
+      <span><i style="background:#dbeafe"></i>완료(확정)</span>
     </div>
     <div class="mcal-event-list" id="calEventList">
       <div style="font-size:11px;color:#999;">로딩 중...</div>
@@ -867,7 +869,7 @@ function renderCalList(items, ds) {
   const LABEL = { 신청중:'신청/승인', 승인됨:'신청/승인', 사용중:'사용중', 확정:'완료(확정)', 사용후입력완료:'완료(확정)' };
   const today = new Date().toISOString().split('T')[0];
   // 과거(종료일 < 오늘) 항목 제거
-  const visible = items.filter(p => (p.end || p.start) >= today);
+  const visible = items.filter(p => (p.end || p.start) >= today).reverse();
   let html = '<div style="font-size:11px;font-weight:700;color:#1a3a5c;margin-bottom:5px;">' + title + '</div>';
   if (!visible.length) {
     html += '<div style="font-size:11px;color:#999;">예정된 일정이 없습니다.</div>';
