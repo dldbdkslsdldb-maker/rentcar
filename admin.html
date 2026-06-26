@@ -291,8 +291,7 @@
         <thead>
           <tr>
             <th>#</th>
-            <th>사용일자</th>
-            <th>사용시간</th>
+            <th>사용일시</th>
             <th>신청자</th>
             <th>목적지</th>
             <th>사용목적</th>
@@ -302,7 +301,7 @@
           </tr>
         </thead>
         <tbody id="tableBody">
-          <tr><td colspan="9" class="loading">데이터 로딩 중...</td></tr>
+          <tr><td colspan="8" class="loading">데이터 로딩 중...</td></tr>
         </tbody>
       </table>
     </div>
@@ -378,7 +377,7 @@ function logout() {
 
 // 데이터 로드
 async function loadData() {
-  document.getElementById('tableBody').innerHTML = '<tr><td colspan="9" class="loading">데이터 로딩 중...</td></tr>';
+  document.getElementById('tableBody').innerHTML = '<tr><td colspan="8" class="loading">데이터 로딩 중...</td></tr>';
   try {
     const res = await fetch(`${API_BASE}?state=open&per_page=100`, {
       headers: { 'Authorization': `token ${TOKEN}`, 'Accept': 'application/vnd.github+json' }
@@ -387,7 +386,7 @@ async function loadData() {
     updateStats();
     renderTable();
   } catch(e) {
-    document.getElementById('tableBody').innerHTML = '<tr><td colspan="9" class="empty">데이터 로드 실패</td></tr>';
+    document.getElementById('tableBody').innerHTML = '<tr><td colspan="8" class="empty">데이터 로드 실패</td></tr>';
   }
 }
 
@@ -423,7 +422,7 @@ function renderTable() {
   });
 
   if (filtered.length === 0) {
-    document.getElementById('tableBody').innerHTML = '<tr><td colspan="9" class="empty">조회된 내역이 없습니다</td></tr>';
+    document.getElementById('tableBody').innerHTML = '<tr><td colspan="8" class="empty">조회된 내역이 없습니다</td></tr>';
     return;
   }
 
@@ -447,8 +446,13 @@ function renderTable() {
 
     return `<tr>
       <td><strong>#${issue.number}</strong></td>
-      <td>${d['사용일자']}</td>
-      <td>${d['사용시간']}</td>
+      <td>${(()=>{
+        const dates = (d['사용일자']||'').split('~').map(s=>s.trim());
+        const times = (d['사용시간']||'').split('~').map(s=>s.trim());
+        const s = dates[0]||'', e = dates[1]||'', ts = times[0]||'', te = times[1]||'';
+        if(e && e!==s) return `${s} ${ts}<br>~ ${e} ${te}`;
+        return `${s}<br>${ts}${te?' ~ '+te:''}`;
+      })()}</td>
       <td>${d['신청자']}</td>
       <td>${d['목적지']}</td>
       <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${d['사용목적']}">${d['사용목적']}</td>
