@@ -138,7 +138,11 @@
   .mcal-nav button{background:none;border:none;cursor:pointer;font-size:18px;color:#1a3a5c;padding:0 6px;line-height:1;border-radius:4px;}
   .mcal-nav button:hover{background:#e8f0f8;}
   .mcal-nav-title{font-size:13px;font-weight:700;color:#1a3a5c;}
-  .mcal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;}
+  .mcal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:0;text-align:center;}
+  .mcal-cell{margin:1px;}
+  .mcal-cell.range-start{border-radius:4px 0 0 4px;margin-right:0;}
+  .mcal-cell.range-mid{border-radius:0;margin-left:0;margin-right:0;}
+  .mcal-cell.range-end{border-radius:0 4px 4px 0;margin-left:0;}
   .mcal-dow{font-size:10px;font-weight:700;color:#888;padding:3px 0;}
   .mcal-cell{font-size:11px;padding:4px 2px;border-radius:4px;min-height:26px;line-height:1.3;}
   .mcal-cell.other-month{color:#ccc;}
@@ -215,7 +219,15 @@
         <div class="ic-car">
           <p>· 승인 후 사용 가능한 업무 전용 차량입니다.</p>
           <p>· 차량 반납 장소 : <strong>창원1공장</strong></p>
-          <p>· 우선 배정 대상 : 외부 고객 의전 / 장거리·장기 출장 / 부서 업무상 부득이한 경우 / 기타 업무 목적</p>
+          <div style="margin-top:5px">
+            <p>· <strong>배정 대상 :</strong> 해당 차량은 일반적인 공용 업무 차량과 구분하여, 아래와 같은 경우에 우선적으로 배정될 예정입니다.</p>
+            <ul style="padding-left:16px;margin:3px 0 0 0;line-height:1.9">
+              <li>외부 고객사 및 주요 인사 의전이 필요한 경우</li>
+              <li>장거리 또는 장기 출장 등 업무상 차량 운행이 필요한 경우</li>
+              <li>부서 업무 수행을 위해 별도 차량 사용이 부득이하게 필요하다고 인정되는 경우</li>
+              <li>기타 회사에서 필요하다고 판단되는 업무 목적의 차량 사용 등</li>
+            </ul>
+          </div>
         </div>
         <div class="ic-process">
           <strong>📌 신청 프로세스</strong>
@@ -326,9 +338,9 @@
     <div style="font-size:11px;color:#888;margin-bottom:6px;">날짜 클릭 시 상세 일정 표시</div>
     <div class="mcal-grid" id="calGrid"></div>
     <div class="mcal-legend">
-      <span><i style="background:#fee2e2"></i>사용중</span>
-      <span><i style="background:#d1fae5"></i>예약확정</span>
       <span><i style="background:#fef3c7"></i>신청/승인</span>
+      <span><i style="background:#fee2e2"></i>사용중</span>
+      <span><i style="background:#d1fae5"></i>완료(확정)</span>
     </div>
     <div class="mcal-event-list" id="calEventList">
       <div style="font-size:11px;color:#999;">로딩 중...</div>
@@ -797,20 +809,33 @@ function expandDates(s, e) {
   return res;
 }
 
+function effectiveStatus(p) {
+  const st = p.status || '신청중';
+  if (st !== '확정') return st;
+  const today = new Date().toISOString().split('T')[0];
+  const s = p.start || '', e = p.end || s;
+  if (s <= today && today <= e) return '사용중';
+  return '확정';
+}
+
 function renderCal() {
   const DOW = ['일','월','화','수','목','금','토'];
   const todayStr = new Date().toISOString().split('T')[0];
   document.getElementById('calTitle').textContent = calYear + '년 ' + (calMonth + 1) + '월';
 
-  // 날짜별 최우선 상태 매핑
+  // 날짜별 최우선 상태 매핑 (범위 연속 표시 포함)
   const evMap = {};
   const PRI = { 사용중:4, 확정:3, 사용후입력완료:3, 승인됨:2, 신청중:1 };
   calIssues.forEach(issue => {
     const p = parseCalDate(issue.body);
     if (!p.start) return;
-    expandDates(p.start, p.end).forEach(dt => {
-      const pri = PRI[p.status] || 1;
-      if (!evMap[dt] || pri > evMap[dt].pri) evMap[dt] = { status: p.status, pri };
+    const st = effectiveStatus(p);
+    const dates = expandDates(p.start, p.end);
+    const isRange = dates.length > 1;
+    dates.forEach((dt, idx) => {
+      const pri = PRI[st] || 1;
+      const rangePos = !isRange ? '' : idx === 0 ? 'range-start' : idx === dates.length-1 ? 'range-end' : 'range-mid';
+      if (!evMap[dt] || pri > evMap[dt].pri) evMap[dt] = { status: st, pri, rangePos };
     });
   });
 
@@ -821,7 +846,7 @@ function renderCal() {
   for (let day = 1; day <= lastDay; day++) {
     const ds = calYear + '-' + String(calMonth + 1).padStart(2,'0') + '-' + String(day).padStart(2,'0');
     const info = evMap[ds];
-    let cls = 'mcal-cell' + (ds === todayStr ? ' today' : '') + (info ? ' ev-' + info.status : '');
+    let cls = 'mcal-cell' + (ds === todayStr ? ' today' : '') + (info ? ' ev-' + info.status : '') + (info?.rangePos ? ' ' + info.rangePos : '');
     html += '<div class="' + cls + '" onclick="showCalDay(\'' + ds + '\')">' + day + '</div>';
   }
   document.getElementById('calGrid').innerHTML = html;
@@ -839,14 +864,17 @@ function showCalDay(ds) {
 
 function renderCalList(items, ds) {
   const title = ds ? ds + ' 일정' : (calMonth + 1) + '월 전체 일정';
-  const LABEL = { 신청중:'신청중', 승인됨:'예약확정', 사용중:'사용중', 확정:'확정', 사용후입력완료:'사용후입력완료' };
+  const LABEL = { 신청중:'신청/승인', 승인됨:'신청/승인', 사용중:'사용중', 확정:'완료(확정)', 사용후입력완료:'완료(확정)' };
+  const today = new Date().toISOString().split('T')[0];
+  // 과거(종료일 < 오늘) 항목 제거
+  const visible = items.filter(p => (p.end || p.start) >= today);
   let html = '<div style="font-size:11px;font-weight:700;color:#1a3a5c;margin-bottom:5px;">' + title + '</div>';
-  if (!items.length) {
-    html += '<div style="font-size:11px;color:#999;">일정이 없습니다.</div>';
+  if (!visible.length) {
+    html += '<div style="font-size:11px;color:#999;">예정된 일정이 없습니다.</div>';
   } else {
-    items.forEach(p => {
-      const st = p.status || '신청중';
-      const evCls = ['확정','사용후입력완료'].includes(st) ? 'ev-확정' : 'ev-' + st;
+    visible.forEach(p => {
+      const st = effectiveStatus(p);
+      const evCls = st === '사용중' ? 'ev-사용중' : ['확정','사용후입력완료'].includes(st) ? 'ev-확정' : 'ev-신청중';
       const dateStr = p.start + (p.end && p.end !== p.start ? ' ~ ' + p.end : '');
       html += '<div class="mcal-ev-item ' + evCls + '">'
             + '<div style="font-weight:700">' + (LABEL[st] || st) + '</div>'
