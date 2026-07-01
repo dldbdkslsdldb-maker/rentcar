@@ -888,7 +888,7 @@ function renderAdminCal() {
   const PRI = { 사용중:4, 확정:3, 사용후입력완료:3, 승인됨:2, 신청중:1 };
   allIssues.forEach(issue => {
     const p = parseAdminDate(issue.body);
-    if (!p.start) return;
+    if (!p.start || p.status === '반려') return;
     const st = adminEffectiveStatus(p);
     const dates = expandAdminDates(p.start, p.end);
     const isRange = dates.length > 1;
@@ -920,7 +920,7 @@ function renderAdminCal() {
 }
 
 function showAdminCalDay(ds) {
-  const items = allIssues.map(i => parseAdminDate(i.body)).filter(p => p.start && expandAdminDates(p.start, p.end).includes(ds));
+  const items = allIssues.map(i => parseAdminDate(i.body)).filter(p => p.start && p.status !== '반려' && expandAdminDates(p.start, p.end).includes(ds));
   renderAdminCalList(items, ds);
 }
 

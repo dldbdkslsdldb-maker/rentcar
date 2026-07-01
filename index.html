@@ -867,7 +867,7 @@ function renderCal() {
   const PRI = { 사용중:4, 확정:3, 사용후입력완료:3, 승인됨:2, 신청중:1 };
   calIssues.forEach(issue => {
     const p = parseCalDate(issue.body);
-    if (!p.start) return;
+    if (!p.start || p.status === '반려') return;
     const st = effectiveStatus(p);
     const dates = expandDates(p.start, p.end);
     const isRange = dates.length > 1;
@@ -897,7 +897,7 @@ function renderCal() {
 }
 
 function showCalDay(ds) {
-  const items = calIssues.map(i => parseCalDate(i.body)).filter(p => p.start && expandDates(p.start, p.end).includes(ds));
+  const items = calIssues.map(i => parseCalDate(i.body)).filter(p => p.start && p.status !== '반려' && expandDates(p.start, p.end).includes(ds));
   renderCalList(items, ds);
 }
 
